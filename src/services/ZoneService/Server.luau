@@ -21,6 +21,7 @@ function ZoneServiceServer.init(_self: ZoneServiceServer)
 	end
 end
 
+-- Get Zone(s)
 function ZoneServiceServer.GetZone(zoneId: string)
 	local zone = Zones[zoneId]
 
@@ -46,22 +47,18 @@ function ZoneServiceServer.GetZones()
 	return zones
 end
 
-function ZoneServiceServer.OpenZone(zoneId: string): boolean
+-- Manage Zone State
+function ZoneServiceServer.CanOpenZone(zoneId: string): boolean
 	local zone = Zones[zoneId]
 
 	if not zone or zone.State == ZoneData.States.Open then
 		return false
 	end
 
-	if not ZoneServiceUtils.HasOpenNeighbor(Zones, zoneId) then
-		return false
-	end
-
-	zone.State = ZoneData.States.Open
-	return true
+	return ZoneServiceUtils.HasOpenNeighbor(Zones, zoneId)
 end
 
-function ZoneServiceServer.CloseZone(zoneId: string): boolean
+function ZoneServiceServer.CanCloseZone(zoneId: string): boolean
 	local zone = Zones[zoneId]
 
 	if not zone or zone.State == ZoneData.States.Closed then
@@ -81,14 +78,32 @@ function ZoneServiceServer.CloseZone(zoneId: string): boolean
 
 	simulatedZones[zoneId].State = ZoneData.States.Closed
 
-	if ZoneServiceUtils.AreOpenZonesConnected(simulatedZones) then
-		zone.State = ZoneData.States.Closed
-		return true
-	end
-
-	return false
+	return ZoneServiceUtils.AreOpenZonesConnected(simulatedZones)
 end
 
+function ZoneServiceServer.OpenZone(zoneId: string): boolean
+	if not ZoneServiceServer.CanOpenZone(zoneId) then
+		return false
+	end
+
+	local zone = Zones[zoneId]
+
+	zone.State = ZoneData.States.Open
+	return true
+end
+
+function ZoneServiceServer.CloseZone(zoneId: string): boolean
+	if not ZoneServiceServer.CanCloseZone(zoneId) then
+		return false
+	end
+
+	local zone = Zones[zoneId]
+
+	zone.State = ZoneData.States.Closed
+	return true
+end
+
+-- Manage Zone Event
 function ZoneServiceServer.AddEvent(zoneId: string, event): boolean
 	local zone = Zones[zoneId]
 
