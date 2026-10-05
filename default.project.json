@@ -15,13 +15,25 @@
             "ExampleServiceUtils": {
               "$path": "src/services/ExampleService/Utils.luau"
             }
+          },
+          "ZoneService": {
+            "$className": "Folder",
+            "ZoneServiceClient": {
+              "$path": "src/services/ZoneService/Client.luau"
+            },
+            "ZoneServiceUtils": {
+              "$path": "src/services/ZoneService/Utils.luau"
+            }
           }
         },
         "Classes": {
           "$className": "Folder"
         },
         "Modules": {
-          "$className": "Folder"
+          "$className": "Folder",
+          "ZoneData": {
+            "$path": "src/modules/ZoneData.luau"
+          }
         }
       },
       "Packages": {
@@ -41,6 +53,12 @@
           "$className": "Folder",
           "ExampleServiceServer": {
             "$path": "src/services/ExampleService/Server.luau"
+          }
+        },
+        "ZoneService": {
+          "$className": "Folder",
+          "ZoneServiceServer": {
+            "$path": "src/services/ZoneService/Server.luau"
           }
         }
       },

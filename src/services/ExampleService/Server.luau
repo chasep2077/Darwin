@@ -1,6 +1,6 @@
 local ExampleServiceServer = {}
 
-function ExampleServiceServer.init(self: ExampleServiceServer)
+function ExampleServiceServer.init(_self: ExampleServiceServer)
 	print("hi from ExampleServiceServer!")
 end
 
