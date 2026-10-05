@@ -15,7 +15,6 @@ function ZoneServiceServer.init(_self: ZoneServiceServer)
 		Zones[zoneId] = {
 			Id = zoneId,
 			State = ZoneData.States.Open,
-			Event = nil, -- TEMPORARY INIT FOR EVENTS
 			Connections = table.clone(definition.Connections),
 		}
 	end
@@ -32,7 +31,6 @@ function ZoneServiceServer.GetZone(zoneId: string)
 	return {
 		Id = zone.Id,
 		State = zone.State,
-		Event = zone.Event,
 		Connections = table.clone(zone.Connections),
 	}
 end
@@ -71,7 +69,6 @@ function ZoneServiceServer.CanCloseZone(zoneId: string): boolean
 		simulatedZones[simulatedId] = {
 			Id = data.Id,
 			State = data.State,
-			Event = data.Event,
 			Connections = table.clone(data.Connections),
 		}
 	end
@@ -101,41 +98,6 @@ function ZoneServiceServer.CloseZone(zoneId: string): boolean
 
 	zone.State = ZoneData.States.Closed
 	return true
-end
-
--- Manage Zone Event
-function ZoneServiceServer.AddEvent(zoneId: string, event): boolean
-	local zone = Zones[zoneId]
-
-	if not zone or zone.Event ~= nil or zone.State ~= event.RequiredZoneState then
-		return false
-	end
-
-	zone.Event = event
-
-	return true
-end
-
-function ZoneServiceServer.RemoveEvent(zoneId: string): boolean
-	local zone = Zones[zoneId]
-
-	if not zone or zone.Event == nil then
-		return false
-	end
-
-	zone.Event = nil
-
-	return true
-end
-
-function ZoneServiceServer.GetEvent(zoneId: string)
-	local zone = Zones[zoneId]
-
-	if not zone then
-		return nil
-	end
-
-	return zone.Event
 end
 
 export type ZoneServiceServer = typeof(ZoneServiceServer) & {}

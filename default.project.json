@@ -24,6 +24,15 @@
             "ZoneServiceUtils": {
               "$path": "src/services/ZoneService/Utils.luau"
             }
+          },
+          "EventService": {
+            "$className": "Folder",
+            "EventServiceClient": {
+              "$path": "src/services/EventService/Client.luau"
+            },
+            "EventServiceUtils": {
+              "$path": "src/services/EventService/Utils.luau"
+            }
           }
         },
         "Classes": {
@@ -33,6 +42,9 @@
           "$className": "Folder",
           "ZoneData": {
             "$path": "src/modules/ZoneData.luau"
+          },
+          "EventData": {
+            "$path": "src/modules/EventData.luau" 
           }
         }
       },
@@ -60,10 +72,25 @@
           "ZoneServiceServer": {
             "$path": "src/services/ZoneService/Server.luau"
           }
+        },
+        "EventService": {
+          "$className": "Folder",
+          "EventServiceServer": {
+            "$path": "src/services/EventService/Server.luau"
+          }
         }
       },
       "Classes": {
-        "$className": "Folder"
+        "$className": "Folder",
+        "Events": {
+          "$className": "Folder",
+          "Event": {
+            "$path": "src/classes/Events/Event.luau"
+          },
+          "CloseZone": {
+            "$path": "src/classes/Events/CloseZone.luau"
+          }
+        }
       },
       "Modules": {
         "$className": "Folder"
