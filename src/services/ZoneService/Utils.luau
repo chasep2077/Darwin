@@ -4,6 +4,7 @@ local ZoneData = require(ReplicatedStorage.Shared.Modules.ZoneData)
 
 local ZoneServiceUtils = {}
 
+-- Returns all zones that are currently open
 function ZoneServiceUtils.GetOpenZones(zones: { [string]: any }): { [string]: any }
 	local openZones = {}
 
@@ -16,6 +17,7 @@ function ZoneServiceUtils.GetOpenZones(zones: { [string]: any }): { [string]: an
 	return openZones
 end
 
+-- Checks whether a zone has at least one connected open neighbor.
 function ZoneServiceUtils.HasOpenNeighbor(zones: { [string]: any }, zoneId: string): boolean
 	local zone = zones[zoneId]
 
@@ -34,34 +36,38 @@ function ZoneServiceUtils.HasOpenNeighbor(zones: { [string]: any }, zoneId: stri
 	return false
 end
 
+-- Checks whether every open zone can be reached from every other open zone.
 function ZoneServiceUtils.AreOpenZonesConnected(zones: { [string]: any }): boolean
 	local openZones = ZoneServiceUtils.GetOpenZones(zones)
 
 	local openZoneCount = 0
-	local visitedZoneCount = 0
-
 	local startZoneId = nil
 
 	for zoneId in pairs(openZones) do
 		openZoneCount += 1
+		startZoneId = startZoneId or zoneId
+	end
 
-		if not startZoneId then
-			startZoneId = zoneId
-		end
+	-- There must be at least one open zone to form a connected network.
+	if not startZoneId then
+		return false
 	end
 
 	if openZoneCount == 0 then
 		return false
 	end
 
-	local visited = {}
+	local visited = { startZoneId = true }
+	local visitedZoneCount = 1
+
 	local queue = { startZoneId }
+	local queueIndex = 1
 
-	visited[startZoneId] = true
-	visitedZoneCount += 1
+	-- Traverse all rechable open zones using breadth-first search.
+	while queueIndex <= #queue do
+		local currentZoneId = queue[queueIndex]
+		queueIndex += 1
 
-	while #queue > 0 do
-		local currentZoneId = table.remove(queue, 1)
 		local currentZone = zones[currentZoneId]
 
 		for _, connectedZoneId in ipairs(currentZone.Connections) do

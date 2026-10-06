@@ -9,6 +9,7 @@ EventData.Types = {
 EventData.TargetTypes = {
 	Zone = "Zone",
 	Player = "Player",
+	Map = "Map",
 }
 
 EventData.Definitions = {
@@ -26,6 +27,7 @@ EventData.Definitions = {
 	},
 }
 
+-- Validates the static event definitions before they are used by the service.
 function EventData.Validate(): (boolean, string?)
 	for eventType, definition in pairs(EventData.Definitions) do
 		if type(eventType) ~= "string" or eventType == "" then
@@ -40,6 +42,7 @@ function EventData.Validate(): (boolean, string?)
 			return false, `Event {eventType} has an invalid target type.`
 		end
 
+		-- Checks that the target type is one of the supported types.
 		local validTargetType = false
 
 		for _, targetType in pairs(EventData.TargetTypes) do

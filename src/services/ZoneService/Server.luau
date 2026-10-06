@@ -7,6 +7,16 @@ local ZoneServiceServer = {}
 
 local Zones = {}
 
+-- Creates a safe copy of a zone without exposing the internal state.
+local function copyZone(zone)
+	return {
+		Id = zone.Id,
+		State = zone.State,
+		Connections = table.clone(zone.Connections),
+	}
+end
+
+-- Initializes the server's runtime zone state from the zone definitions.
 function ZoneServiceServer.init(_self: ZoneServiceServer)
 	local isValid, errorMessage = ZoneData.Validate()
 	assert(isValid, errorMessage)
@@ -20,7 +30,7 @@ function ZoneServiceServer.init(_self: ZoneServiceServer)
 	end
 end
 
--- Get Zone(s)
+-- Returns a copy of a single zone so callers cannot modify internal states.
 function ZoneServiceServer.GetZone(zoneId: string)
 	local zone = Zones[zoneId]
 
@@ -28,24 +38,21 @@ function ZoneServiceServer.GetZone(zoneId: string)
 		return nil
 	end
 
-	return {
-		Id = zone.Id,
-		State = zone.State,
-		Connections = table.clone(zone.Connections),
-	}
+	return copyZone(zone)
 end
 
+-- Returns copies of all zones.
 function ZoneServiceServer.GetZones()
 	local zones = {}
 
-	for zoneId in pairs(Zones) do
-		zones[zoneId] = ZoneServiceServer.GetZone(zoneId)
+	for zoneId, zone in pairs(Zones) do
+		zones[zoneId] = copyZone(zone)
 	end
 
 	return zones
 end
 
--- Manage Zone State
+-- Determines whether a closed zone can be opened.
 function ZoneServiceServer.CanOpenZone(zoneId: string): boolean
 	local zone = Zones[zoneId]
 
@@ -56,6 +63,7 @@ function ZoneServiceServer.CanOpenZone(zoneId: string): boolean
 	return ZoneServiceUtils.HasOpenNeighbor(Zones, zoneId)
 end
 
+-- Determines whether a closed zone can be closed without disconnecting the remaining open zones from one another.
 function ZoneServiceServer.CanCloseZone(zoneId: string): boolean
 	local zone = Zones[zoneId]
 
@@ -63,14 +71,11 @@ function ZoneServiceServer.CanCloseZone(zoneId: string): boolean
 		return false
 	end
 
+	-- Test the closure on a copy so the real zone state is unchanged.
 	local simulatedZones = {}
 
-	for simulatedId, data in pairs(Zones) do
-		simulatedZones[simulatedId] = {
-			Id = data.Id,
-			State = data.State,
-			Connections = table.clone(data.Connections),
-		}
+	for simulatedId, simulatedZone in pairs(Zones) do
+		simulatedZones[simulatedId] = copyZone(simulatedZone)
 	end
 
 	simulatedZones[zoneId].State = ZoneData.States.Closed
@@ -78,25 +83,23 @@ function ZoneServiceServer.CanCloseZone(zoneId: string): boolean
 	return ZoneServiceUtils.AreOpenZonesConnected(simulatedZones)
 end
 
+-- Changes a zone from closed to open if the transition is valid.
 function ZoneServiceServer.OpenZone(zoneId: string): boolean
 	if not ZoneServiceServer.CanOpenZone(zoneId) then
 		return false
 	end
 
-	local zone = Zones[zoneId]
-
-	zone.State = ZoneData.States.Open
+	Zones[zoneId].State = ZoneData.States.Open
 	return true
 end
 
+-- Changes a zone from open to closed if the transition is valid.
 function ZoneServiceServer.CloseZone(zoneId: string): boolean
 	if not ZoneServiceServer.CanCloseZone(zoneId) then
 		return false
 	end
 
-	local zone = Zones[zoneId]
-
-	zone.State = ZoneData.States.Closed
+	Zones[zoneId].State = ZoneData.States.Closed
 	return true
 end
 

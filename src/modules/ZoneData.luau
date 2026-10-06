@@ -15,6 +15,7 @@ ZoneData.Ids = {
 	SE = "SE",
 }
 
+-- Static definition of the zone layout and their connections.
 ZoneData.Definitions = {
 	[ZoneData.Ids.NW] = {
 		Connections = {
@@ -23,7 +24,6 @@ ZoneData.Definitions = {
 			ZoneData.Ids.C,
 		},
 	},
-
 	[ZoneData.Ids.NE] = {
 		Connections = {
 			ZoneData.Ids.NW,
@@ -31,7 +31,6 @@ ZoneData.Definitions = {
 			ZoneData.Ids.E,
 		},
 	},
-
 	[ZoneData.Ids.W] = {
 		Connections = {
 			ZoneData.Ids.NW,
@@ -39,7 +38,6 @@ ZoneData.Definitions = {
 			ZoneData.Ids.SW,
 		},
 	},
-
 	[ZoneData.Ids.C] = {
 		Connections = {
 			ZoneData.Ids.NW,
@@ -50,7 +48,6 @@ ZoneData.Definitions = {
 			ZoneData.Ids.SE,
 		},
 	},
-
 	[ZoneData.Ids.E] = {
 		Connections = {
 			ZoneData.Ids.NE,
@@ -58,7 +55,6 @@ ZoneData.Definitions = {
 			ZoneData.Ids.SE,
 		},
 	},
-
 	[ZoneData.Ids.SW] = {
 		Connections = {
 			ZoneData.Ids.W,
@@ -66,7 +62,6 @@ ZoneData.Definitions = {
 			ZoneData.Ids.SE,
 		},
 	},
-
 	[ZoneData.Ids.SE] = {
 		Connections = {
 			ZoneData.Ids.C,
@@ -76,6 +71,7 @@ ZoneData.Definitions = {
 	},
 }
 
+-- Validates the static graph before it is used by the server.
 function ZoneData.Validate(): (boolean, string?)
 	for zoneId, definition in pairs(ZoneData.Definitions) do
 		if type(zoneId) ~= "string" or zoneId == "" then
@@ -85,25 +81,27 @@ function ZoneData.Validate(): (boolean, string?)
 		local connections = {}
 
 		for _, connectedZoneId in ipairs(definition.Connections) do
+			-- A zone cannot connect to itself
 			if connectedZoneId == zoneId then
 				return false, `Zone {zoneId} cannot connect to itself.`
 			end
 
-			local connectedZone = ZoneData.Definitions[connectedZoneId]
-
-			if not connectedZone then
+			-- Every connection must reference an existing zone.
+			if not ZoneData.Definitions[connectedZoneId] then
 				return false, `Zone {zoneId} connects to nonexistent zone {connectedZoneId}.`
 			end
 
+			-- Each connection should only appear once.
 			if connections[connectedZoneId] then
 				return false, `Zone {zoneId} contains duplicate connection {connectedZoneId}.`
 			end
 
 			connections[connectedZoneId] = true
 
+			-- Connections must be dclared in both directions.
 			local reverseConnectionFound = false
 
-			for _, reverseId in ipairs(connectedZone.Connections) do
+			for _, reverseId in ipairs(ZoneData.Definitions[connectedZoneId].Connections) do
 				if reverseId == zoneId then
 					reverseConnectionFound = true
 					break

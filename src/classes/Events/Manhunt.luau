@@ -5,7 +5,7 @@ Manhunt.__index = Manhunt
 
 setmetatable(Manhunt, Event)
 
-function Manhunt.new(id: string, target: Player, duration: number)
+function Manhunt.new(id: string, target: number, duration: number)
 	local self = Event.new(id, "Manhunt", target, duration)
 
 	setmetatable(self, Manhunt)
