@@ -1,4 +1,7 @@
+local ServerScriptService = game:GetService("ServerScriptService")
 local Event = require(script.Parent.Event)
+
+local ZoneServiceServer = require(ServerScriptService.Services.ZoneService.ZoneServiceServer)
 
 local CloseZone = {}
 CloseZone.__index = CloseZone
@@ -23,6 +26,8 @@ end
 
 function CloseZone:Complete()
 	print(`Completing CloseZone event for zone {self.Target}`)
+
+	ZoneServiceServer.CloseZone(self.Target)
 end
 
 return CloseZone

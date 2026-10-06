@@ -9,8 +9,8 @@ local EventServiceServer = {}
 
 local Events = {
 	[EventData.Types.CloseZone] = require(ServerScriptService.Classes.Events.CloseZone),
-	[EventData.Types.OpenZone] = nil,
-	[EventData.Types.Manhunt] = nil,
+	[EventData.Types.OpenZone] = require(ServerScriptService.Classes.Events.OpenZone),
+	[EventData.Types.Manhunt] = require(ServerScriptService.Classes.Events.Manhunt),
 }
 
 local ActiveEvents = {}

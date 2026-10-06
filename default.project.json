@@ -89,6 +89,12 @@
           },
           "CloseZone": {
             "$path": "src/classes/Events/CloseZone.luau"
+          },
+          "OpenZone": {
+            "$path": "src/classes/Events/OpenZone.luau"
+          },
+          "Manhunt": {
+            "$path": "src/classes/Events/Manhunt.luau"
           }
         }
       },
