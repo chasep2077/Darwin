@@ -68,9 +68,13 @@ function EventServiceServer.init(_self: EventServiceServer)
 	assert(isValid, errorMessage)
 
 	Events = {
+		-- Map Events
+		[EventData.Types.LowGravity] = require(EventClasses.LowGravity),
+		-- Player Events
+		[EventData.Types.Manhunt] = require(EventClasses.Manhunt),
+		-- Zone Events
 		[EventData.Types.CloseZone] = require(EventClasses.CloseZone),
 		[EventData.Types.OpenZone] = require(EventClasses.OpenZone),
-		[EventData.Types.Manhunt] = require(EventClasses.Manhunt),
 	}
 end
 
@@ -115,6 +119,7 @@ function EventServiceServer.CreateEvent(eventType: string, target: any): (any, s
 	local eventClass = Events[eventType]
 
 	local eventId = HttpService:GenerateGUID(false)
+
 	local event = eventClass.new(eventId, target, definition.Duration)
 
 	ActiveEvents[event.Id] = event

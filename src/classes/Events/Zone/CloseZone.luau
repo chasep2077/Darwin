@@ -17,7 +17,7 @@ function CloseZone.new(id: string, target: string, duration: number)
 end
 
 function CloseZone:Start()
-	print(`Starting CloseZone event for zone {self.Target}`)
+	print(`Zone Event: Closing Zone [STARTED] in the {self.Target} zone`)
 end
 
 function CloseZone:Update(deltaTime: number)
@@ -25,7 +25,7 @@ function CloseZone:Update(deltaTime: number)
 end
 
 function CloseZone:Complete()
-	print(`Completing CloseZone event for zone {self.Target}`)
+	print(`Zone Event: Closing Zone [ENDED] in the {self.Target} zone\nZONE CLOSED`)
 
 	ZoneServiceServer.CloseZone(self.Target)
 end

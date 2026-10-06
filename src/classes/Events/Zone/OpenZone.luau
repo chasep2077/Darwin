@@ -17,7 +17,7 @@ function OpenZone.new(id: string, target: string, duration: number)
 end
 
 function OpenZone:Start()
-	print(`Starting OpenZone event for zone {self.Target}`)
+	print(`Zone Event: Opening Zone [STARTED] in the {self.Target} zone`)
 end
 
 function OpenZone:Update(deltaTime: number)
@@ -25,7 +25,7 @@ function OpenZone:Update(deltaTime: number)
 end
 
 function OpenZone:Complete()
-	print(`Completing OpenZone event for zone {self.Target}`)
+	print(`Zone Event: Opening Zone [ENDED] in the {self.Target} zone\nZONE OPENED`)
 
 	ZoneServiceServer.OpenZone(self.Target)
 end

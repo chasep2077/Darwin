@@ -1,9 +1,13 @@
 local EventData = {}
 
 EventData.Types = {
+	-- Map
+	LowGravity = "LowGravity",
+	-- Player
+	Manhunt = "Manhunt",
+	-- Zone
 	CloseZone = "CloseZone",
 	OpenZone = "OpenZone",
-	Manhunt = "Manhunt",
 }
 
 EventData.TargetTypes = {
@@ -13,16 +17,23 @@ EventData.TargetTypes = {
 }
 
 EventData.Definitions = {
+	-- Map
+	[EventData.Types.LowGravity] = {
+		TargetType = EventData.TargetTypes.Map,
+		Duration = 10,
+	},
+	-- Player
+	[EventData.Types.Manhunt] = {
+		TargetType = EventData.TargetTypes.Player,
+		Duration = 60,
+	},
+	-- Zone
 	[EventData.Types.CloseZone] = {
 		TargetType = EventData.TargetTypes.Zone,
 		Duration = 60,
 	},
 	[EventData.Types.OpenZone] = {
 		TargetType = EventData.TargetTypes.Zone,
-		Duration = 60,
-	},
-	[EventData.Types.Manhunt] = {
-		TargetType = EventData.TargetTypes.Player,
 		Duration = 60,
 	},
 }

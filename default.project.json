@@ -7,15 +7,6 @@
         "$className": "Folder",
         "Services": {
           "$className": "Folder",
-          "ExampleService": {
-            "$className": "Folder",
-            "ExampleServiceClient": {
-              "$path": "src/services/ExampleService/Client.luau"
-            },
-            "ExampleServiceUtils": {
-              "$path": "src/services/ExampleService/Utils.luau"
-            }
-          },
           "ZoneService": {
             "$className": "Folder",
             "ZoneServiceClient": {
@@ -29,9 +20,6 @@
             "$className": "Folder",
             "EventServiceClient": {
               "$path": "src/services/EventService/Client.luau"
-            },
-            "EventServiceUtils": {
-              "$path": "src/services/EventService/Utils.luau"
             }
           }
         },
@@ -61,12 +49,6 @@
       },
       "Services": {
         "$className": "Folder",
-        "ExampleService": {
-          "$className": "Folder",
-          "ExampleServiceServer": {
-            "$path": "src/services/ExampleService/Server.luau"
-          }
-        },
         "ZoneService": {
           "$className": "Folder",
           "ZoneServiceServer": {
@@ -87,14 +69,17 @@
           "Event": {
             "$path": "src/classes/Events/Event.luau"
           },
-          "CloseZone": {
-            "$path": "src/classes/Events/CloseZone.luau"
-          },
-          "OpenZone": {
-            "$path": "src/classes/Events/OpenZone.luau"
+          "LowGravity": {
+            "$path": "src/classes/Events/Map/LowGravity.luau"
           },
           "Manhunt": {
-            "$path": "src/classes/Events/Manhunt.luau"
+            "$path": "src/classes/Events/Player/Manhunt.luau"
+          },
+          "CloseZone": {
+            "$path": "src/classes/Events/Zone/CloseZone.luau"
+          },
+          "OpenZone": {
+            "$path": "src/classes/Events/Zone/OpenZone.luau"
           }
         }
       },

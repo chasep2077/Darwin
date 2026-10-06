@@ -14,7 +14,7 @@ function Manhunt.new(id: string, target: number, duration: number)
 end
 
 function Manhunt:Start()
-	print(`Starting Manhunt event for {self.Target}`)
+	print(`Player Event: Manhunt [STARTED] on {self.Target}`)
 end
 
 function Manhunt:Update(deltaTime: number)
@@ -22,7 +22,7 @@ function Manhunt:Update(deltaTime: number)
 end
 
 function Manhunt:Complete()
-	print(`Completing Manhunt event for {self.Target}`)
+	print(`Player Event: Manhunt [ENDED] on {self.Target}`)
 end
 
 return Manhunt
