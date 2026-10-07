@@ -60,6 +60,12 @@
           "EventServiceServer": {
             "$path": "src/services/EventService/Server.luau"
           }
+        },
+        "MapService": {
+          "$className": "Folder",
+          "MapServiceServer": {
+            "$path": "src/services/MapService/Server.luau"
+          }
         }
       },
       "Classes": {
