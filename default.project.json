@@ -93,6 +93,15 @@
           "OpenZone": {
             "$path": "src/classes/Events/Zone/OpenZone.luau"
           }
+        },
+        "Interactables": {
+          "$className": "Folder",
+          "Interactable": {
+            "$path": "src/classes/Interactables/Interactable.luau"
+          },
+          "Tree": {
+            "$path": "src/classes/Interactables/Tree.luau"
+          }
         }
       },
       "Modules": {

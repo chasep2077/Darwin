@@ -1,12 +1,24 @@
 local Players = game:GetService("Players")
 local CollectionService = game:GetService("CollectionService")
 local RunService = game:GetService("RunService")
+local ServerScriptService = game:GetService("ServerScriptService")
 local Workspace = game:GetService("Workspace")
 
 local INTERACTABLE_TAG = "Interactable"
+local INTERACTABLE_TYPE_ATTRIBUTE = "InteractableType"
 local MOVEMENT_CANCEL_DISTANCE = 0.75
 
 local InteractionServiceServer = {}
+
+local InteractableClasses = ServerScriptService.Classes.Interactables
+
+local InteractableTypes = {
+	Tree = require(InteractableClasses.Tree),
+	-- Chiar = require(InteractableClasses.Chair),
+	-- Chest = require(InteractableClasses.Chest),
+	-- Electronic = require(InteractableClasses.Electronic),
+	-- PlayerCorpse = require(InteractableClasses.PlayerCorpse),
+}
 
 -- Registered interactable objects
 local Interactables = {}
@@ -20,6 +32,28 @@ local function RegisterInteractable(interactable: Instance)
 		return
 	end
 
+	-- All interactable handlers currently manage Models
+	if not interactable:IsA("Model") then
+		warn(`Interactable {interactable:GetFullName()} must be a Model.`)
+		return
+	end
+
+	-- Determine which handler class this object uses
+	local interactableType = interactable:GetAttribute(INTERACTABLE_TYPE_ATTRIBUTE)
+
+	if typeof(interactableType) ~= "string" then
+		warn(`Interactable {interactable:GetFullName()} has no InteractableType attribute.`)
+		return
+	end
+
+	local handlerClass = InteractableTypes[interactableType]
+
+	if not handlerClass then
+		warn(`Unknown interactable type "{interactableType}" on {interactable:GetFullName()}.`)
+		return
+	end
+
+	-- Find the object's interaction prompt
 	local prompt = interactable:FindFirstChildWhichIsA("ProximityPrompt", true)
 
 	if not prompt then
@@ -27,43 +61,58 @@ local function RegisterInteractable(interactable: Instance)
 		return
 	end
 
-	local triggeredConnection = prompt.Triggered:Connect(function(player)
-		InteractionServiceServer.StartInteraction(player, interactable)
+	-- Construct the handler for this specific object
+	local success, handler = pcall(function()
+		return handlerClass.new(interactable)
 	end)
 
-	Interactables[interactable] = {
+	if not success then
+		warn(`Failed to register {interactable:GetFullName()}: {handler}`)
+		return
+	end
+
+	local data = {
 		Prompt = prompt,
-		TriggeredConnection = triggeredConnection,
+		Handler = handler,
+		TriggeredConnection = nil,
 	}
+
+	-- Register before connecting the prompt
+	Interactables[interactable] = data
+
+	data.TriggeredConnection = prompt.Triggered:Connect(function(player)
+		InteractionServiceServer.StartInteraction(player, interactable)
+	end)
 end
 
 local function CanStartInteraction(player: Player, interactable: Instance): (boolean, string?)
 	if player.Parent ~= Players then
-		return false, "Player is not connected"
+		return false, "Player is not connected."
 	end
 
 	local character = player.Character
 
 	if not character then
-		return false, "Player has no character"
+		return false, "Player has no character."
 	end
 
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
 
 	if not humanoid or humanoid.Health <= 0 then
-		return false, "Player is not alive"
+		return false, "Player is not alive."
 	end
 
 	local rootPart = character:FindFirstChild("HumanoidRootPart")
 
-	if not rootPart or rootPart:IsA("BasePart") then
-		return false, "Character has no valid HumanoidRootPart"
+	-- Make sure the root part exists and is a BasePart
+	if not rootPart or not rootPart:IsA("BasePart") then
+		return false, "Character has no valid HumanoidRootPart."
 	end
 
 	local interactableData = Interactables[interactable]
 
 	if not interactableData then
-		return false, "Interactable is not registered"
+		return false, "Interactable is not registered."
 	end
 
 	if not interactable:IsDescendantOf(Workspace) then
@@ -72,6 +121,7 @@ local function CanStartInteraction(player: Player, interactable: Instance): (boo
 
 	local prompt = interactableData.Prompt
 
+	-- Make sure the prompt is enabled and is part of interactable
 	if not prompt.Enabled or not prompt:IsDescendantOf(interactable) then
 		return false, "Prompt is unavailable"
 	end
@@ -82,6 +132,13 @@ local function CanStartInteraction(player: Player, interactable: Instance): (boo
 
 	if ActiveInteractionsByPlayer[player] then
 		return false, "Player is already interacting"
+	end
+
+	-- Let the handler validate its own object's state
+	local canInteract, reason = interactableData.Handler:CanInteract(player)
+
+	if not canInteract then
+		return false, reason or "Object cannot be interacted with."
 	end
 
 	local promptParent = prompt.Parent
@@ -115,7 +172,7 @@ function InteractionServiceServer.init(_self: InteractionServiceServer)
 	-- Register interactables added later
 	CollectionService:GetInstanceAddedSignal(INTERACTABLE_TAG):Connect(RegisterInteractable)
 
-	-- Unregister interactables when their tag is removed
+	-- Unregister interactables when their tag is removed or they leave the DataModel
 	CollectionService:GetInstanceRemovedSignal(INTERACTABLE_TAG):Connect(function(interactable)
 		local data = Interactables[interactable]
 
@@ -123,15 +180,19 @@ function InteractionServiceServer.init(_self: InteractionServiceServer)
 			return
 		end
 
+		-- Cancel any interaction using this object
 		local interaction = ActiveInteractionsByObject[interactable]
 
 		if interaction then
 			InteractionServiceServer.CancelInteraction(interaction.Player, "InteractableRemoved")
 		end
 
-		data.TriggeredConnection:Disconnect()
+		if data.TriggeredConnection then
+			data.TriggeredConnection:Disconnect()
+		end
 
-		-- Disable the prompt if the object lost its interactable tag
+		-- Keep a still-tagged object's prompt usable if it is added back later
+		-- If its tag was removed, disable the prompt
 		if not CollectionService:HasTag(interactable, INTERACTABLE_TAG) and data.Prompt.Parent then
 			data.Prompt.Enabled = false
 		end
@@ -139,6 +200,7 @@ function InteractionServiceServer.init(_self: InteractionServiceServer)
 		Interactables[interactable] = nil
 	end)
 
+	-- Cancel active interactions when players leave
 	Players.PlayerRemoving:Connect(function(player)
 		InteractionServiceServer.CancelInteraction(player, "PlayerRemoving")
 	end)
@@ -174,13 +236,13 @@ local function CleanupInteraction(interaction)
 		(interaction.Status == "Canceled" or interaction.Status == "Failed")
 		and interactableData
 		and interactableData.Prompt == interaction.Prompt
+		and CollectionService:HasTag(interaction.Object, INTERACTABLE_TAG)
 		and interaction.Prompt.Parent
 	then
 		interaction.Prompt.Enabled = interaction.PromptWasEnabled
 	end
 
-	-- Release animation resources
-	interaction.Animation:Destroy()
+	-- Destroy the track created for this interaction
 	interaction.AnimationTrack:Destroy()
 end
 
@@ -189,20 +251,41 @@ function InteractionServiceServer.StartInteraction(player: Player, interactable:
 	local canStart, reason = CanStartInteraction(player, interactable)
 
 	if not canStart then
+		-- Expected rejections are normal gameplay
+		-- TEMP DEBUGGING warn(reason)
 		warn(reason)
 		return
 	end
 
 	local character = player.Character
+
+	if not character then
+		return
+	end
+
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
+
+	if not humanoid or humanoid.Health <= 0 then
+		return
+	end
+
 	local rootPart = character:FindFirstChild("HumanoidRootPart")
+
+	if not rootPart or not rootPart:IsA("BasePart") then
+		return
+	end
+
 	local interactableData = Interactables[interactable]
 
-	-- Get the animation configured for this object.
-	local animationId = interactable:GetAttribute("InteractionAnimationId")
+	if not interactableData then
+		return
+	end
 
-	if typeof(animationId) ~= "string" or animationId == "" then
-		warn(`Interactable {interactable:GetFullName()} has no InteractionAnimationId`)
+	-- The handler owns the animation configuration
+	local animationAsset = interactableData.Handler.Animation
+
+	if typeof(animationAsset) ~= "Instance" or not animationAsset:IsA("Animation") then
+		warn(`Interactable {interactable:GetFullName()} has no valid Animation.`)
 		return
 	end
 
@@ -213,15 +296,11 @@ function InteractionServiceServer.StartInteraction(player: Player, interactable:
 		return
 	end
 
-	local animation = Instance.new("Animation")
-	animation.AnimationId = animationId
-
 	local loaded, result = pcall(function()
-		return animator:LoadAnimation(animation)
+		return animator:LoadAnimation(animationAsset)
 	end)
 
 	if not loaded then
-		animation:Destroy()
 		warn(`Failed to load interaction animation: {result}`)
 		return
 	end
@@ -234,6 +313,8 @@ function InteractionServiceServer.StartInteraction(player: Player, interactable:
 	local interaction = {
 		Player = player,
 		Object = interactable,
+		Handler = interactableData.Handler,
+
 		Prompt = interactableData.Prompt,
 		PromptWasEnabled = interactableData.Prompt.Enabled,
 
@@ -244,7 +325,6 @@ function InteractionServiceServer.StartInteraction(player: Player, interactable:
 		RootPart = rootPart,
 		StartPosition = rootPart.Position,
 
-		Animation = animation,
 		AnimationTrack = animationTrack,
 		Connections = {},
 	}
@@ -289,7 +369,7 @@ function InteractionServiceServer.StartInteraction(player: Player, interactable:
 		end)
 	)
 
-	-- Cancel if the character moves away from its starting position
+	-- Cancel if the character is displaced
 	table.insert(
 		interaction.Connections,
 		RunService.Heartbeat:Connect(function()
@@ -304,7 +384,6 @@ function InteractionServiceServer.StartInteraction(player: Player, interactable:
 end
 
 function InteractionServiceServer.CancelInteraction(player: Player, reason: string)
-	-- Stop the interaction and release reservations.
 	local interaction = ActiveInteractionsByPlayer[player]
 
 	-- There is no active interaction to cancel
@@ -326,7 +405,6 @@ function InteractionServiceServer.CancelInteraction(player: Player, reason: stri
 end
 
 function InteractionServiceServer.CompleteInteraction(player)
-	-- Complete the interaction and invoke the object's behavior.
 	local interaction = ActiveInteractionsByPlayer[player]
 
 	if not interaction or interaction.Status ~= "Active" then
@@ -353,15 +431,28 @@ function InteractionServiceServer.CompleteInteraction(player)
 		return
 	end
 
+	-- Revalidate the object's state before completing
+	local canInteract, reason = handler:CanInteract(player)
+
+	if not canInteract then
+		InteractionServiceServer.CancelInteraction(player, reason or "Object Unavailable")
+		return
+	end
+
+	-- Prevent duplicate completion while the handler runs
 	interaction.Status = "Completing"
 
-	local success, completed, reason = pcall(function()
-		return handler:Complete(player)
+	-- TODO: When the inventory API exists, obtain handler:GetContents(player),
+	-- deliver the items successfully, and then invoke handler:OnCompleted(player).
+	-- For now, we only perform the object's completion behavior.
+	local success, completed, completionReason = pcall(function()
+		return handler:OnCompleted(player)
 	end)
 
 	if not success or completed ~= true then
 		interaction.Status = "Failed"
-		interaction.CancelReason = if success then reason or "CompletionFailed" else "HandlerError"
+
+		interaction.CancelReason = if success then completionReason or "CompletionFailed" else "HandlerError"
 
 		if not success then
 			warn(`Interaction completion failed: {completed}`)
