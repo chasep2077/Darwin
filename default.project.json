@@ -66,6 +66,12 @@
           "MapServiceServer": {
             "$path": "src/services/MapService/Server.luau"
           }
+        },
+        "InteractionService": {
+          "$className": "Folder",
+          "InteractionServiceServer": {
+            "$path": "src/services/InteractionService/Server.luau"
+          }
         }
       },
       "Classes": {
