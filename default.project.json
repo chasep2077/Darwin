@@ -72,6 +72,12 @@
           "InteractionServiceServer": {
             "$path": "src/services/InteractionService/Server.luau"
           }
+        },
+        "InventoryService": {
+          "$className": "Folder",
+          "InventoryServiceServer": {
+            "$path": "src/services/InventoryService/Server.luau"
+          }
         }
       },
       "Classes": {
